@@ -180,7 +180,7 @@ class Sitemap {
 	 * @param string|int|null $lastmod The date of last modification of url. Unix timestamp or any English textual datetime description.
 	 * @return Sitemap
 	 */
-	public function addItem($loc, $priority = self::DEFAULT_PRIORITY, $changefreq = NULL, $lastmod = NULL, $alternateLanguage = null) {
+	public function addItem($loc, $priority = self::DEFAULT_PRIORITY, $changefreq = NULL, $lastmod = NULL, $alternateLanguages = null) {
 		if (($this->getCurrentItem() % self::ITEM_PER_SITEMAP) == 0) {
 			if ($this->getWriter() instanceof \XMLWriter) {
 				$this->endSitemap();
@@ -199,21 +199,24 @@ class Sitemap {
 			$this->getWriter()->writeElement('lastmod', $this->getLastModifiedDate($lastmod));
 
 
-        if ($alternateLanguage) {
-            $this->getWriter()->startElement('xhtml:link');
-            $this->getWriter()->writeAttribute(
-                'rel',
-                'alternate'
-            );
-            $this->getWriter()->writeAttribute(
-                'hreflang',
-                $alternateLanguage['hreflang']
-            );
-            $this->getWriter()->writeAttribute(
-                'href',
-                $this->getDomain() . $alternateLanguage['href']
-            );
-            $this->getWriter()->endElement();
+        if ($alternateLanguages) {
+
+            foreach($alternateLanguages as $alternateLanguage) {
+                $this->getWriter()->startElement('xhtml:link');
+                $this->getWriter()->writeAttribute(
+                    'rel',
+                    'alternate'
+                );
+                $this->getWriter()->writeAttribute(
+                    'hreflang',
+                    $alternateLanguage['hreflang']
+                );
+                $this->getWriter()->writeAttribute(
+                    'href',
+                    $this->getDomain() . $alternateLanguage['href']
+                );
+                $this->getWriter()->endElement();
+            }
         }
 
 		$this->getWriter()->endElement();
@@ -247,28 +250,53 @@ class Sitemap {
 		$this->getWriter()->endDocument();
 	}
 
-	/**
-	 * Writes Google sitemap index for generated sitemap files
-	 *
-	 * @param string $loc Accessible URL path of sitemaps
-	 * @param string|int $lastmod The date of last modification of sitemap. Unix timestamp or any English textual datetime description.
-	 */
-	public function createSitemapIndex($loc, $lastmod = 'Today') {
-		$this->endSitemap();
-		$indexwriter = new \XMLWriter();
-		$indexwriter->openURI($this->getPath() . $this->getFilename() . self::SEPERATOR . self::INDEX_SUFFIX . self::EXT);
-		$indexwriter->startDocument('1.0', 'UTF-8');
-		$indexwriter->setIndent(true);
-		$indexwriter->startElement('sitemapindex');
-		$indexwriter->writeAttribute('xmlns', self::SCHEMA);
-		for ($index = 0; $index < $this->getCurrentSitemap(); $index++) {
-			$indexwriter->startElement('sitemap');
-			$indexwriter->writeElement('loc', $loc . $this->getFilename() . ($index ? self::SEPERATOR . $index : '') . self::EXT);
-			$indexwriter->writeElement('lastmod', $this->getLastModifiedDate($lastmod));
-			$indexwriter->endElement();
-		}
-		$indexwriter->endElement();
-		$indexwriter->endDocument();
-	}
+    /**
+     * Writes Google sitemap index for generated sitemap files
+     *
+     * @param string $loc Accessible URL path of sitemaps
+     * @param string|int $lastmod The date of last modification of sitemap. Unix timestamp or any English textual datetime description.
+     */
+    public function createSitemapIndex($loc, $lastmod = 'Today') {
+        $this->endSitemap();
+        $indexwriter = new \XMLWriter();
+        $indexwriter->openURI($this->getPath() . $this->getFilename() . self::SEPERATOR . self::INDEX_SUFFIX . self::EXT);
+        $indexwriter->startDocument('1.0', 'UTF-8');
+        $indexwriter->setIndent(true);
+        $indexwriter->startElement('sitemapindex');
+        $indexwriter->writeAttribute('xmlns', self::SCHEMA);
+        for ($index = 0; $index < $this->getCurrentSitemap(); $index++) {
+            $indexwriter->startElement('sitemap');
+            $indexwriter->writeElement('loc', $loc . $this->getFilename() . ($index ? self::SEPERATOR . $index : '') . self::EXT);
+            $indexwriter->writeElement('lastmod', $this->getLastModifiedDate($lastmod));
+            $indexwriter->endElement();
+        }
+        $indexwriter->endElement();
+        $indexwriter->endDocument();
+    }
+
+    /**
+     * Output Google sitemap index for generated sitemap files
+     *
+     * @param string $loc Accessible URL path of sitemaps
+     * @param string|int $lastmod The date of last modification of sitemap. Unix timestamp or any English textual datetime description.
+     */
+    public function outputSitemapIndex($loc, $lastmod = 'Today') {
+        $this->endSitemap();
+        $indexwriter = new \XMLWriter();
+        $indexwriter->openMemory();
+        $indexwriter->startDocument('1.0', 'UTF-8');
+        $indexwriter->setIndent(true);
+        $indexwriter->startElement('sitemapindex');
+        $indexwriter->writeAttribute('xmlns', self::SCHEMA);
+        for ($index = 0; $index < $this->getCurrentSitemap(); $index++) {
+            $indexwriter->startElement('sitemap');
+            $indexwriter->writeElement('loc', $loc . $this->getFilename() . ($index ? self::SEPERATOR . $index : '') . self::EXT);
+            $indexwriter->writeElement('lastmod', $this->getLastModifiedDate($lastmod));
+            $indexwriter->endElement();
+        }
+        $indexwriter->endElement();
+        $indexwriter->endDocument();
+        return $indexwriter->outputMemory(true);
+    }
 
 }
