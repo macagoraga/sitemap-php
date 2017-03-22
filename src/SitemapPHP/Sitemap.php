@@ -168,6 +168,7 @@ class Sitemap {
 		$this->getWriter()->setIndent(true);
 		$this->getWriter()->startElement('urlset');
 		$this->getWriter()->writeAttribute('xmlns', self::SCHEMA);
+        $this->getWriter()->writeAttribute('xmlns:xhtml', 'http://www.w3.org/1999/xhtml');
 	}
 
 	/**
@@ -179,7 +180,7 @@ class Sitemap {
 	 * @param string|int|null $lastmod The date of last modification of url. Unix timestamp or any English textual datetime description.
 	 * @return Sitemap
 	 */
-	public function addItem($loc, $priority = self::DEFAULT_PRIORITY, $changefreq = NULL, $lastmod = NULL) {
+	public function addItem($loc, $priority = self::DEFAULT_PRIORITY, $changefreq = NULL, $lastmod = NULL, $alternateLanguage = null) {
 		if (($this->getCurrentItem() % self::ITEM_PER_SITEMAP) == 0) {
 			if ($this->getWriter() instanceof \XMLWriter) {
 				$this->endSitemap();
@@ -196,6 +197,25 @@ class Sitemap {
 			$this->getWriter()->writeElement('changefreq', $changefreq);
 		if ($lastmod)
 			$this->getWriter()->writeElement('lastmod', $this->getLastModifiedDate($lastmod));
+
+
+        if ($alternateLanguage) {
+            $this->getWriter()->startElement('xhtml:link');
+            $this->getWriter()->writeAttribute(
+                'rel',
+                'alternate'
+            );
+            $this->getWriter()->writeAttribute(
+                'hreflang',
+                $alternateLanguage['hreflang']
+            );
+            $this->getWriter()->writeAttribute(
+                'href',
+                $this->getDomain() . $alternateLanguage['href']
+            );
+            $this->getWriter()->endElement();
+        }
+
 		$this->getWriter()->endElement();
 		return $this;
 	}
